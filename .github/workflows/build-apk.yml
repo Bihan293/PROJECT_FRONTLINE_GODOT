@@ -51,25 +51,17 @@ jobs:
 
       - name: Configure Godot Editor Settings
         run: |
-          mkdir -p ~/.config/godot
-          cat << 'EOF' > ~/.config/godot/editor_settings-4.tres
-[gd_resource type="EditorSettings" format=3]
+          chmod +x scripts/setup_godot_ci.sh
+          bash scripts/setup_godot_ci.sh
 
-[resource]
-export/android/android_sdk_path = "ANDROID_SDK_PLACEHOLDER"
-export/android/debug_keystore = "KEYSTORE_PLACEHOLDER"
-export/android/debug_keystore_user = "androiddebugkey"
-export/android/debug_keystore_pass = "android"
-export/android/force_system_user = false
-export/android/shutdown_adb_on_exit = true
-EOF
-          sed -i "s|ANDROID_SDK_PLACEHOLDER|$ANDROID_HOME|g" ~/.config/godot/editor_settings-4.tres
-          sed -i "s|KEYSTORE_PLACEHOLDER|$GITHUB_WORKSPACE/debug.keystore|g" ~/.config/godot/editor_settings-4.tres
+      - name: Pre-heat Godot Cache
+        run: |
+          godot --headless --editor --quit || true
 
       - name: Build Android APK with Godot
         run: |
           mkdir -p build
-          godot --headless --export-release "Android" ./build/PROJECT_FRONTLINE_v1.0.apk
+          godot --headless --verbose --export-debug "Android" ./build/PROJECT_FRONTLINE_v1.0.apk
           ls -lh build/
 
       - name: Upload APK Artifact
