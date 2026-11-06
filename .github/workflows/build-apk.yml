@@ -1,0 +1,118 @@
+name: Build Godot 4 Android APK and Create Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  export:
+    name: Export Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android Build Tools
+        run: |
+          sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34"
+
+      - name: Generate Debug Keystore
+        run: |
+          keytool -keyalg RSA -genkeypair -alias androiddebugkey -keypass android -keystore debug.keystore -storepass android -dname "CN=Android Debug,O=Android,C=US" -validity 9999 -deststoretype pkcs12
+
+      - name: Download Godot 4.3 and Export Templates
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          unzip -q Godot_v4.3-stable_linux.x86_64.zip
+          sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+
+          mkdir -p ~/.local/share/godot/export_templates/4.3.stable
+          wget -q https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_export_templates.tpz
+          unzip -q Godot_v4.3-stable_export_templates.tpz
+          mv templates/* ~/.local/share/godot/export_templates/4.3.stable/
+
+      - name: Configure Godot Editor Settings
+        run: |
+          mkdir -p ~/.config/godot
+          cat << 'EOF' > ~/.config/godot/editor_settings-4.tres
+[gd_resource type="EditorSettings" format=3]
+
+[resource]
+export/android/android_sdk_path = "ANDROID_SDK_PLACEHOLDER"
+export/android/debug_keystore = "KEYSTORE_PLACEHOLDER"
+export/android/debug_keystore_user = "androiddebugkey"
+export/android/debug_keystore_pass = "android"
+export/android/force_system_user = false
+export/android/shutdown_adb_on_exit = true
+EOF
+          sed -i "s|ANDROID_SDK_PLACEHOLDER|$ANDROID_HOME|g" ~/.config/godot/editor_settings-4.tres
+          sed -i "s|KEYSTORE_PLACEHOLDER|$GITHUB_WORKSPACE/debug.keystore|g" ~/.config/godot/editor_settings-4.tres
+
+      - name: Build Android APK with Godot
+        run: |
+          mkdir -p build
+          godot --headless --export-release "Android" ./build/PROJECT_FRONTLINE_v1.0.apk
+          ls -lh build/
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PROJECT_FRONTLINE_v1.0-apk
+          path: build/PROJECT_FRONTLINE_v1.0.apk
+          retention-days: 14
+
+      - name: Determine Release Tag
+        id: release_info
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          else
+            TAG="v1.0.0"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create or Update GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.release_info.outputs.tag }}
+          name: "Project Frontline ${{ steps.release_info.outputs.tag }} (Godot 4 Mobile)"
+          body: |
+            ## 🎮 Project Frontline v1.0.0 — Godot 4 Mobile Edition
+
+            Первая официальная версия на полноценном нативном игровом движке **Godot 4**:
+
+            ### 🚀 Особенности версии:
+            - ⚡ **Нативный C++ движок:** Высокая производительность и стабильный FPS на мобильных устройствах (рендерер `gl_compatibility`).
+            - 🦾 **Dummy War солдаты:** Проработанные манекены с подвижными шарнирами, процедурными шагами и тактической стойкой.
+            - 🎯 **Честный Рэгдолл (Ragdoll):** Физические тела бойцов при гибели падают с учетом направления и силы пули, шлемы срываются при хедшотах.
+            - 🩸 **Система крови:** 3D-брызги крови и устойчивые лужи на земле.
+            - 📱 **Мобильное сенсорное управление:** Аналоговый виртуальный джойстик, мультитач-обзор, кнопки стрельбы, зума, перезарядки, приседа и бинтов.
+            - 🚩 **Режим игры:** Захват 3 точек (A, B, C) в деревне, союзные и вражеские боты, выбор количества бойцов и сложности.
+
+            ### Инструкция по установке:
+            1. Скачайте файл **`PROJECT_FRONTLINE_v1.0.apk`** ниже.
+            2. Откройте его на телефоне и подтвердите установку.
+            3. Запустите игру.
+          files: |
+            build/PROJECT_FRONTLINE_v1.0.apk
+          generate_release_notes: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

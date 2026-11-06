@@ -1,0 +1,116 @@
+[gd_scene load_steps=12 format=3 uid="uid://c8soldier123"]
+
+[ext_resource type="Script" path="res://scripts/dummy_soldier.gd" id="1_soldier"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_root"]
+radius = 0.35
+height = 1.8
+
+[sub_resource type="StandardMaterial3D" id="Mat_Wood"]
+albedo_color = Color(0.73, 0.58, 0.42, 1)
+roughness = 0.65
+
+[sub_resource type="StandardMaterial3D" id="Mat_Joint"]
+albedo_color = Color(0.15, 0.16, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Vest"]
+albedo_color = Color(0.2, 0.35, 0.52, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Helmet"]
+albedo_color = Color(0.15, 0.28, 0.4, 1)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Gun"]
+albedo_color = Color(0.12, 0.13, 0.12, 1)
+metallic = 0.5
+roughness = 0.4
+
+[sub_resource type="BoxMesh" id="Mesh_Pelvis"]
+size = Vector3(0.34, 0.18, 0.22)
+
+[sub_resource type="BoxMesh" id="Mesh_Chest"]
+size = Vector3(0.38, 0.42, 0.24)
+
+[sub_resource type="BoxMesh" id="Mesh_Vest"]
+size = Vector3(0.4, 0.36, 0.26)
+
+[sub_resource type="SphereMesh" id="Mesh_Head"]
+radius = 0.19
+height = 0.38
+
+[sub_resource type="BoxMesh" id="Mesh_Gun"]
+size = Vector3(0.08, 0.12, 0.65)
+
+[node name="DummySoldier" type="CharacterBody3D" groups=["soldiers"]]
+collision_layer = 2
+collision_mask = 3
+script = ExtResource("1_soldier")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("CapsuleShape3D_root")
+
+[node name="NavigationAgent3D" type="NavigationAgent3D" parent="."]
+
+[node name="RayCast3D" type="RayCast3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+target_position = Vector3(0, 0, -40)
+
+[node name="Visuals" type="Node3D" parent="."]
+
+[node name="Pelvis" type="Node3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.94, 0)
+
+[node name="PelvisMesh" type="MeshInstance3D" parent="Visuals/Pelvis"]
+mesh = SubResource("Mesh_Pelvis")
+surface_material_override/0 = SubResource("Mat_Joint")
+
+[node name="LeftHip" type="Node3D" parent="Visuals/Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, -0.09, 0)
+
+[node name="LeftKnee" type="Node3D" parent="Visuals/Pelvis/LeftHip"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.42, 0)
+
+[node name="RightHip" type="Node3D" parent="Visuals/Pelvis"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, -0.09, 0)
+
+[node name="RightKnee" type="Node3D" parent="Visuals/Pelvis/RightHip"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.42, 0)
+
+[node name="Torso" type="Node3D" parent="Visuals"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
+
+[node name="ChestMesh" type="MeshInstance3D" parent="Visuals/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.21, 0)
+mesh = SubResource("Mesh_Chest")
+surface_material_override/0 = SubResource("Mat_Wood")
+
+[node name="Vest" type="MeshInstance3D" parent="Visuals/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.21, 0)
+mesh = SubResource("Mesh_Vest")
+surface_material_override/0 = SubResource("Mat_Vest")
+
+[node name="Neck" type="Node3D" parent="Visuals/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.43, 0)
+
+[node name="HeadMesh" type="MeshInstance3D" parent="Visuals/Torso/Neck"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.19, 0)
+mesh = SubResource("Mesh_Head")
+surface_material_override/0 = SubResource("Mat_Wood")
+
+[node name="Helmet" type="MeshInstance3D" parent="Visuals/Torso/Neck"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.24, 0)
+mesh = SubResource("Mesh_Head")
+surface_material_override/0 = SubResource("Mat_Helmet")
+
+[node name="LeftShoulder" type="Node3D" parent="Visuals/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.38, 0.02)
+
+[node name="RightShoulder" type="Node3D" parent="Visuals/Torso"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.38, 0.02)
+
+[node name="Weapon" type="Node3D" parent="Visuals/Torso/RightShoulder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.25, -0.15)
+
+[node name="GunMesh" type="MeshInstance3D" parent="Visuals/Torso/RightShoulder/Weapon"]
+mesh = SubResource("Mesh_Gun")
+surface_material_override/0 = SubResource("Mat_Gun")

@@ -1,0 +1,735 @@
+[gd_scene load_steps=22 format=3 uid="uid://c8mainscene123"]
+
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="PackedScene" uid="uid://c8player123" path="res://scenes/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" uid="uid://c8cpoint123" path="res://scenes/capture_point.tscn" id="3_cpoint"]
+[ext_resource type="Script" path="res://scripts/virtual_joystick.gd" id="4_vjoy"]
+[ext_resource type="Script" path="res://scripts/touch_look.gd" id="5_tlook"]
+
+[sub_resource type="ProceduralSkyMaterial" id="Sky_Mat"]
+sky_top_color = Color(0.38, 0.48, 0.58, 1)
+sky_horizon_color = Color(0.68, 0.72, 0.75, 1)
+ground_bottom_color = Color(0.2, 0.22, 0.2, 1)
+ground_horizon_color = Color(0.55, 0.58, 0.55, 1)
+
+[sub_resource type="Sky" id="Sky_Main"]
+sky_material = SubResource("Sky_Mat")
+
+[sub_resource type="Environment" id="Env_Main"]
+background_mode = 2
+sky = SubResource("Sky_Main")
+ambient_light_source = 3
+ambient_light_color = Color(0.65, 0.68, 0.7, 1)
+tonemap_mode = 2
+
+[sub_resource type="BoxShape3D" id="Shape_Ground"]
+size = Vector3(250, 1, 250)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Ground"]
+albedo_color = Color(0.32, 0.38, 0.28, 1)
+roughness = 0.9
+
+[sub_resource type="PlaneMesh" id="Mesh_Ground"]
+size = Vector2(250, 250)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Road"]
+albedo_color = Color(0.42, 0.4, 0.35, 1)
+roughness = 0.95
+
+[sub_resource type="PlaneMesh" id="Mesh_Road"]
+size = Vector2(16, 220)
+
+[sub_resource type="BoxShape3D" id="Shape_House"]
+size = Vector3(10, 4, 10)
+
+[sub_resource type="StandardMaterial3D" id="Mat_Wall"]
+albedo_color = Color(0.65, 0.6, 0.52, 1)
+
+[sub_resource type="BoxMesh" id="Mesh_House"]
+size = Vector3(10, 4, 10)
+
+[sub_resource type="StyleBoxFlat" id="Style_JoyBase"]
+bg_color = Color(0.12, 0.16, 0.14, 0.55)
+corner_radius_top_left = 60
+corner_radius_top_right = 60
+corner_radius_bottom_right = 60
+corner_radius_bottom_left = 60
+
+[sub_resource type="StyleBoxFlat" id="Style_JoyHandle"]
+bg_color = Color(0.75, 0.8, 0.75, 0.7)
+corner_radius_top_left = 25
+corner_radius_top_right = 25
+corner_radius_bottom_right = 25
+corner_radius_bottom_left = 25
+
+[sub_resource type="StyleBoxFlat" id="Style_FireBtn"]
+bg_color = Color(0.72, 0.22, 0.18, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="Style_Btn"]
+bg_color = Color(0.15, 0.22, 0.18, 0.85)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_main")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Env_Main")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 30, 0)
+light_color = Color(1, 0.95, 0.88, 1)
+light_energy = 1.3
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("Shape_Ground")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("Mesh_Ground")
+surface_material_override/0 = SubResource("Mat_Ground")
+
+[node name="Road" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.02, 0)
+mesh = SubResource("Mesh_Road")
+surface_material_override/0 = SubResource("Mat_Road")
+
+[node name="Houses" type="Node3D" parent="."]
+
+[node name="House1" type="StaticBody3D" parent="Houses"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 2, -25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Houses/House1"]
+shape = SubResource("Shape_House")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Houses/House1"]
+mesh = SubResource("Mesh_House")
+surface_material_override/0 = SubResource("Mat_Wall")
+
+[node name="House2" type="StaticBody3D" parent="Houses"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 2, -25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Houses/House2"]
+shape = SubResource("Shape_House")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Houses/House2"]
+mesh = SubResource("Mesh_House")
+surface_material_override/0 = SubResource("Mat_Wall")
+
+[node name="House3" type="StaticBody3D" parent="Houses"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -25, 2, 25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Houses/House3"]
+shape = SubResource("Shape_House")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Houses/House3"]
+mesh = SubResource("Mesh_House")
+surface_material_override/0 = SubResource("Mat_Wall")
+
+[node name="House4" type="StaticBody3D" parent="Houses"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 25, 2, 25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Houses/House4"]
+shape = SubResource("Shape_House")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Houses/House4"]
+mesh = SubResource("Mesh_House")
+surface_material_override/0 = SubResource("Mat_Wall")
+
+[node name="CapturePoints" type="Node3D" parent="."]
+
+[node name="PointA" parent="CapturePoints" instance=ExtResource("3_cpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -55)
+point_id = "A"
+
+[node name="PointB" parent="CapturePoints" instance=ExtResource("3_cpoint")]
+point_id = "B"
+
+[node name="PointC" parent="CapturePoints" instance=ExtResource("3_cpoint")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 55)
+point_id = "C"
+
+[node name="Soldiers" type="Node3D" parent="."]
+
+[node name="Player" parent="." instance=ExtResource("2_player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 65)
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TouchLookArea" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("5_tlook")
+
+[node name="VirtualJoystick" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = -180.0
+offset_right = 180.0
+offset_bottom = -60.0
+grow_vertical = 0
+script = ExtResource("4_vjoy")
+
+[node name="Base" type="Panel" parent="UI/HUD/VirtualJoystick"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_JoyBase")
+
+[node name="Handle" type="Panel" parent="UI/HUD/VirtualJoystick/Base"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -25.0
+offset_top = -25.0
+offset_right = 25.0
+offset_bottom = 25.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("Style_JoyHandle")
+
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -220.0
+offset_top = 15.0
+offset_right = 220.0
+offset_bottom = 55.0
+grow_horizontal = 2
+theme_override_constants/separation = 25
+alignment = 1
+
+[node name="BlueScore" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.65, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "0"
+
+[node name="Points" type="HBoxContainer" parent="UI/HUD/TopBar"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="PointA" type="Label" parent="UI/HUD/TopBar/Points"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "[A]"
+
+[node name="PointB" type="Label" parent="UI/HUD/TopBar/Points"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "[B]"
+
+[node name="PointC" type="Label" parent="UI/HUD/TopBar/Points"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "[C]"
+
+[node name="RedScore" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.35, 0.3, 1)
+theme_override_font_sizes/font_size = 28
+text = "0"
+
+[node name="Crosshair" type="CenterContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Dot" type="ColorRect" parent="UI/HUD/Crosshair"]
+custom_minimum_size = Vector2(4, 4)
+layout_mode = 2
+mouse_filter = 2
+color = Color(1, 1, 1, 0.85)
+
+[node name="Hitmarker" type="TextureRect" parent="UI/HUD"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BottomLeft" type="VBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -65.0
+offset_right = 190.0
+offset_bottom = -15.0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="HealthLabel" type="Label" parent="UI/HUD/BottomLeft"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "100 HP"
+
+[node name="HealthBar" type="ProgressBar" parent="UI/HUD/BottomLeft"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+value = 100.0
+show_percentage = false
+
+[node name="BottomCenter" type="VBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -80.0
+offset_right = 140.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="WeaponName" type="Label" parent="UI/HUD/BottomCenter"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "АК-74"
+horizontal_alignment = 1
+
+[node name="AmmoLabel" type="Label" parent="UI/HUD/BottomCenter"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "30 / 150"
+horizontal_alignment = 1
+
+[node name="Slots" type="HBoxContainer" parent="UI/HUD/BottomCenter"]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="AK" type="Button" parent="UI/HUD/BottomCenter/Slots"]
+layout_mode = 2
+text = "АК"
+
+[node name="Shotgun" type="Button" parent="UI/HUD/BottomCenter/Slots"]
+layout_mode = 2
+text = "ДРОБ"
+
+[node name="Sniper" type="Button" parent="UI/HUD/BottomCenter/Slots"]
+layout_mode = 2
+text = "СВ"
+
+[node name="Pistol" type="Button" parent="UI/HUD/BottomCenter/Slots"]
+layout_mode = 2
+text = "ПМ"
+
+[node name="BottomRight" type="Control" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -260.0
+offset_top = -220.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="FireBtn" type="Button" parent="UI/HUD/BottomRight"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -90.0
+offset_top = -120.0
+offset_right = 0.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("Style_FireBtn")
+text = "ОГОНЬ"
+
+[node name="AimBtn" type="Button" parent="UI/HUD/BottomRight"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -175.0
+offset_top = -120.0
+offset_right = -100.0
+offset_bottom = -65.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("Style_Btn")
+text = "ПРИЦЕЛ"
+
+[node name="JumpBtn" type="Button" parent="UI/HUD/BottomRight"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -175.0
+offset_top = -55.0
+offset_right = -100.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("Style_Btn")
+text = "ПРЫЖОК"
+
+[node name="ReloadBtn" type="Button" parent="UI/HUD/BottomRight"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -120.0
+offset_right = -185.0
+offset_bottom = -65.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("Style_Btn")
+text = "ЗАРЯД"
+
+[node name="CrouchBtn" type="Button" parent="UI/HUD/BottomRight"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -55.0
+offset_right = -185.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("Style_Btn")
+text = "ПРИСЕСТЬ"
+
+[node name="BandageBtn" type="Button" parent="UI/HUD/BottomRight"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -90.0
+offset_top = -180.0
+offset_right = 0.0
+offset_bottom = -130.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/normal = SubResource("Style_Btn")
+text = "БИНТ"
+
+[node name="BandageCount" type="Label" parent="UI/HUD/BottomRight/BandageBtn"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -20.0
+offset_bottom = 23.0
+grow_horizontal = 0
+text = "3"
+
+[node name="StartScreen" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UI/StartScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -180.0
+offset_right = 220.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI/StartScreen/Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -160.0
+offset_top = 25.0
+offset_right = 160.0
+offset_bottom = 65.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 28
+text = "PROJECT FRONTLINE"
+horizontal_alignment = 1
+
+[node name="Sub" type="Label" parent="UI/StartScreen/Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 65.0
+offset_right = 120.0
+offset_bottom = 90.0
+grow_horizontal = 2
+text = "Godot 4 Mobile Edition"
+horizontal_alignment = 1
+
+[node name="TeamSizeLabel" type="Label" parent="UI/StartScreen/Panel"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 110.0
+offset_right = 200.0
+offset_bottom = 135.0
+text = "Бойцов в команде:"
+
+[node name="TeamSizeOption" type="OptionButton" parent="UI/StartScreen/Panel"]
+layout_mode = 0
+offset_left = 220.0
+offset_top = 105.0
+offset_right = 380.0
+offset_bottom = 140.0
+selected = 0
+item_count = 4
+popup/item_0/text = "6"
+popup/item_1/text = "10"
+popup/item_1/id = 1
+popup/item_2/text = "16"
+popup/item_2/id = 2
+popup/item_3/text = "24"
+popup/item_3/id = 3
+
+[node name="DifficultyLabel" type="Label" parent="UI/StartScreen/Panel"]
+layout_mode = 0
+offset_left = 40.0
+offset_top = 160.0
+offset_right = 200.0
+offset_bottom = 185.0
+text = "Сложность ботов:"
+
+[node name="DifficultyOption" type="OptionButton" parent="UI/StartScreen/Panel"]
+layout_mode = 0
+offset_left = 220.0
+offset_top = 155.0
+offset_right = 380.0
+offset_bottom = 190.0
+selected = 1
+item_count = 3
+popup/item_0/text = "Новичок"
+popup/item_1/text = "Обычная"
+popup/item_1/id = 1
+popup/item_2/text = "Ветеран"
+popup/item_2/id = 2
+
+[node name="StartBtn" type="Button" parent="UI/StartScreen/Panel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -80.0
+offset_right = 140.0
+offset_bottom = -25.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "НАЧАТЬ ОПЕРАЦИЮ"
+
+[node name="PauseScreen" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UI/PauseScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -100.0
+offset_right = 160.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -80.0
+offset_top = 20.0
+offset_right = 80.0
+offset_bottom = 50.0
+grow_horizontal = 2
+text = "ПАУЗА"
+horizontal_alignment = 1
+
+[node name="ResumeBtn" type="Button" parent="UI/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -100.0
+offset_right = 100.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "ПРОДОЛЖИТЬ"
+
+[node name="RestartBtn" type="Button" parent="UI/PauseScreen/Panel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -50.0
+offset_right = 100.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "ЗАНОВО"
+
+[node name="EndScreen" type="Control" parent="UI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="UI/EndScreen"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -120.0
+offset_right = 220.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="EndTitle" type="Label" parent="UI/EndScreen/Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -120.0
+offset_top = 25.0
+offset_right = 120.0
+offset_bottom = 60.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "ПОБЕДА"
+horizontal_alignment = 1
+
+[node name="EndDesc" type="Label" parent="UI/EndScreen/Panel"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -180.0
+offset_top = 70.0
+offset_right = 180.0
+offset_bottom = 110.0
+grow_horizontal = 2
+text = "Команда выполнила задачу."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="EndRestartBtn" type="Button" parent="UI/EndScreen/Panel"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -60.0
+offset_right = 110.0
+offset_bottom = -15.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "НОВАЯ ОПЕРАЦИЯ"
