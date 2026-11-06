@@ -3,8 +3,9 @@ class_name SoldierRagdoll
 
 @export var is_headshot: bool = false
 @export var impulse_vector: Vector3 = Vector3.ZERO
+@export var team: int = 2
 
-@onready var helmet_node: Node3D = $Visuals/Torso/Neck/Helmet
+@onready var helmet_node: MeshInstance3D = $Visuals/Torso/Neck/Helmet
 @onready var left_hip: Node3D = $Visuals/Pelvis/LeftHip
 @onready var right_hip: Node3D = $Visuals/Pelvis/RightHip
 @onready var left_knee: Node3D = $Visuals/Pelvis/LeftHip/LeftKnee
@@ -33,14 +34,15 @@ func _ready() -> void:
 		apply_torque_impulse(spin)
 
 	# If killed by a headshot, detach the helmet so it tumbles separately
-	if is_headshot and helmet_node != null:
+	if is_headshot and helmet_node != null and is_instance_valid(helmet_node):
 		var helm_pos = helmet_node.global_position
+		var parent_node = get_parent()
 		helmet_node.get_parent().remove_child(helmet_node)
-		get_parent().add_child(helmet_node)
-		helmet_node.global_position = helm_pos
 
 		var helm_body = RigidBody3D.new()
-		get_parent().add_child(helm_body)
+		helm_body.collision_layer = 4
+		helm_body.collision_mask = 1
+		parent_node.add_child(helm_body)
 		helm_body.global_position = helm_pos
 
 		var col = CollisionShape3D.new()
@@ -49,7 +51,6 @@ func _ready() -> void:
 		col.shape = sphere
 		helm_body.add_child(col)
 
-		helmet_node.get_parent().remove_child(helmet_node)
 		helm_body.add_child(helmet_node)
 		helmet_node.position = Vector3.ZERO
 
@@ -57,7 +58,10 @@ func _ready() -> void:
 		helm_body.apply_torque_impulse(Vector3(randf_range(5.0, 10.0), randf_range(5.0, 10.0), 0))
 
 		# Despawn detached helmet after 20 seconds
-		get_tree().create_timer(20.0).timeout.connect(func(): helm_body.queue_free())
+		get_tree().create_timer(20.0).timeout.connect(func():
+			if is_instance_valid(helm_body):
+				helm_body.queue_free()
+		)
 
 	# Initial limb flopping
 	torso.rotation.x = randf_range(-0.6, -1.0)
@@ -65,6 +69,12 @@ func _ready() -> void:
 	right_hip.rotation.x = randf_range(-0.4, -0.9)
 	left_shoulder.rotation.z = -1.1
 	right_shoulder.rotation.z = 1.1
+
+	# Auto despawn after 30 seconds
+	get_tree().create_timer(30.0).timeout.connect(func():
+		if is_instance_valid(self):
+			queue_free()
+	)
 
 func _physics_process(delta: float) -> void:
 	if settled:

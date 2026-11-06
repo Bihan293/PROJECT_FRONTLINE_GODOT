@@ -23,11 +23,9 @@ const COLOR_RED = Color(0.85, 0.25, 0.2)
 const COLOR_CONTESTED = Color(0.95, 0.8, 0.2)
 
 func _ready() -> void:
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
-	update_visuals()
 	if label:
 		label.text = point_id
+	update_visuals()
 
 func _physics_process(delta: float) -> void:
 	count_occupants()
@@ -71,17 +69,12 @@ func update_visuals() -> void:
 		color = COLOR_RED
 
 	if flag_mesh:
-		var mat = flag_mesh.get_active_material(0)
-		if mat is StandardMaterial3D:
-			mat.albedo_color = color
+		var mat = StandardMaterial3D.new()
+		mat.albedo_color = color
+		flag_mesh.material_override = mat
 
 	if ring_mesh:
-		var r_mat = ring_mesh.get_active_material(0)
-		if r_mat is StandardMaterial3D:
-			r_mat.albedo_color = color
-
-func _on_body_entered(_body: Node3D) -> void:
-	pass
-
-func _on_body_exited(_body: Node3D) -> void:
-	pass
+		var r_mat = StandardMaterial3D.new()
+		r_mat.albedo_color = Color(color.r, color.g, color.b, 0.75)
+		r_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		ring_mesh.material_override = r_mat

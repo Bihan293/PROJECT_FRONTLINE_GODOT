@@ -4,6 +4,7 @@ class_name Player
 signal health_changed(new_health, bleeding, bandages)
 signal ammo_changed(ammo, reserve, weapon_name)
 signal hit_enemy(is_headshot, is_kill)
+signal damage_taken()
 signal player_died()
 
 @export var move_speed: float = 6.8
@@ -92,8 +93,10 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
-	# Continuous auto-firing if fire held
-	if Input.is_action_pressed("fire") and WeaponsData.WEAPONS[current_weapon_key].automatic:
+	# Mobile & Desktop weapon firing (handles both tap for semi-auto and hold for full-auto)
+	if Input.is_action_just_pressed("fire"):
+		fire()
+	elif Input.is_action_pressed("fire") and WeaponsData.WEAPONS[current_weapon_key].automatic:
 		fire()
 
 	# Aiming zoom
@@ -112,8 +115,10 @@ func set_joystick_input(vec: Vector2) -> void:
 
 func set_aim(aim: bool) -> void:
 	is_aiming = aim
-	var target_fov = 42.0 if is_aiming else 75.0
-	camera.fov = lerp(camera.fov, target_fov, 0.2)
+	var target_fov = 75.0
+	if is_aiming:
+		target_fov = 22.0 if current_weapon_key == "sniper" else 45.0
+	camera.fov = lerp(camera.fov, target_fov, 0.25)
 
 func fire() -> void:
 	if not can_fire or is_reloading:
@@ -130,6 +135,7 @@ func fire() -> void:
 	can_fire = false
 	recoil_amount = w.recoil
 	emit_ammo()
+	spawn_muzzle_flash()
 
 	# Raycast hitscan check
 	for i in range(w.pellets):
@@ -143,7 +149,7 @@ func fire() -> void:
 		var to = from + camera.global_transform.basis * spread_vec * w.range
 
 		var space_state = get_world_3d().direct_space_state
-		var query = PhysicsRayQueryParameters3D.create(from, to)
+		var query = PhysicsRayQueryParameters3D.create(from, to, 3) # check world and characters
 		query.exclude = [self]
 		var result = space_state.intersect_ray(query)
 
@@ -153,13 +159,35 @@ func fire() -> void:
 			var hit_dir = (to - from).normalized()
 
 			# Check if hit a soldier bot
-			if collider is DummySoldier:
-				var is_head = (hit_pos.y - collider.global_position.y) > 1.6
+			if collider is DummySoldier and not collider.is_dead:
+				var is_head = (hit_pos.y - collider.global_position.y) > 1.45
 				collider.take_damage(w.damage, hit_dir, hit_pos, is_head)
 				hit_enemy.emit(is_head, collider.health <= 0.0)
 
 	# Fire rate cooldown timer
 	get_tree().create_timer(w.fire_rate).timeout.connect(func(): can_fire = true)
+
+func spawn_muzzle_flash() -> void:
+	if weapon_holder == null:
+		return
+	var flash = MeshInstance3D.new()
+	var sphere = SphereMesh.new()
+	sphere.radius = 0.07
+	sphere.height = 0.14
+	flash.mesh = sphere
+
+	var mat = StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(1.0, 0.85, 0.2, 1.0)
+	flash.material_override = mat
+
+	weapon_holder.add_child(flash)
+	flash.position = Vector3(0, 0, -0.45)
+
+	get_tree().create_timer(0.05).timeout.connect(func():
+		if is_instance_valid(flash):
+			flash.queue_free()
+	)
 
 func reload() -> void:
 	if is_reloading:
@@ -185,6 +213,20 @@ func equip_weapon(key: String) -> void:
 		return
 	current_weapon_key = key
 	is_reloading = false
+
+	# Adjust weapon model appearance
+	if gun_mesh:
+		var w_size = Vector3(0.09, 0.12, 0.65)
+		if key == "pistol":
+			w_size = Vector3(0.06, 0.10, 0.30)
+		elif key == "sniper":
+			w_size = Vector3(0.08, 0.13, 0.95)
+		elif key == "shotgun":
+			w_size = Vector3(0.10, 0.12, 0.75)
+		var box = BoxMesh.new()
+		box.size = w_size
+		gun_mesh.mesh = box
+
 	emit_ammo()
 
 func use_bandage() -> bool:
@@ -192,17 +234,22 @@ func use_bandage() -> bool:
 		return false
 	bandages -= 1
 	bleeding = false
-	health = min(100.0, health + 20.0)
+	health = min(100.0, health + 25.0)
 	emit_health()
 	return true
 
-func take_damage(amount: float, impulse: Vector3, hit_point: Vector3, _is_headshot: bool = false) -> void:
+func take_damage(amount: float, impulse: Vector3, hit_point: Vector3, is_headshot: bool = false) -> void:
 	if is_dead:
 		return
 	health -= amount
 	if health < 70.0:
 		bleeding = true
 	emit_health()
+	damage_taken.emit()
+
+	# Blood burst
+	if hit_point != Vector3.ZERO:
+		BloodEffect.spawn(get_parent(), hit_point, impulse, is_headshot)
 
 	if health <= 0.0:
 		health = 0.0

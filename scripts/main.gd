@@ -29,9 +29,12 @@ var bot_difficulty: float = 1.0
 @onready var point_a_indicator: Label = $UI/HUD/TopBar/Points/PointA
 @onready var point_b_indicator: Label = $UI/HUD/TopBar/Points/PointB
 @onready var point_c_indicator: Label = $UI/HUD/TopBar/Points/PointC
-@onready var hitmarker: TextureRect = $UI/HUD/Hitmarker
+@onready var hitmarker: Control = $UI/HUD/Hitmarker
 @onready var virtual_joystick: VirtualJoystick = $UI/HUD/VirtualJoystick
 @onready var touch_look: TouchLookArea = $UI/HUD/TouchLookArea
+
+# Procedural damage flash overlay
+var damage_overlay: ColorRect = null
 
 const SOLDIER_SCENE = preload("res://scenes/dummy_soldier.tscn")
 
@@ -41,8 +44,17 @@ func _ready() -> void:
 	end_screen.visible = false
 	start_screen.visible = true
 
+	setup_damage_overlay()
 	connect_ui_buttons()
 	setup_player_connections()
+
+func setup_damage_overlay() -> void:
+	damage_overlay = ColorRect.new()
+	damage_overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	damage_overlay.color = Color(0.8, 0.05, 0.05, 0.0)
+	damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud.add_child(damage_overlay)
+	hud.move_child(damage_overlay, 0)
 
 func connect_ui_buttons() -> void:
 	# Start Screen
@@ -88,6 +100,7 @@ func setup_player_connections() -> void:
 		player.health_changed.connect(_on_player_health_changed)
 		player.ammo_changed.connect(_on_player_ammo_changed)
 		player.hit_enemy.connect(_on_player_hit_enemy)
+		player.damage_taken.connect(_on_player_damage_taken)
 		player.player_died.connect(_on_player_died)
 
 	if virtual_joystick:
@@ -117,19 +130,32 @@ func spawn_teams() -> void:
 
 	# Blue bots (player's allies)
 	for i in range(team_size - 1):
-		var bot = SOLDIER_SCENE.instantiate()
-		bot.team = 1
-		bot.difficulty = bot_difficulty
-		soldiers_parent.add_child(bot)
-		bot.global_position = Vector3(randf_range(-30, 30), 1.0, 45.0 + randf_range(5, 20))
+		spawn_single_bot(1)
 
 	# Red bots (enemies)
 	for i in range(team_size):
-		var bot = SOLDIER_SCENE.instantiate()
-		bot.team = 2
-		bot.difficulty = bot_difficulty
-		soldiers_parent.add_child(bot)
-		bot.global_position = Vector3(randf_range(-30, 30), 1.0, -45.0 - randf_range(5, 20))
+		spawn_single_bot(2)
+
+func spawn_single_bot(t: int) -> void:
+	if match_ended:
+		return
+	var bot = SOLDIER_SCENE.instantiate()
+	bot.team = t
+	bot.difficulty = bot_difficulty
+	bot.soldier_died.connect(_on_soldier_died)
+	soldiers_parent.add_child(bot)
+
+	var spawn_z = randf_range(45, 62) if t == 1 else randf_range(-62, -45)
+	bot.global_position = Vector3(randf_range(-25, 25), 1.0, spawn_z)
+
+func _on_soldier_died(_soldier: Node, t: int) -> void:
+	if match_ended:
+		return
+	# Continual battle: respawn replacement soldier after 4 seconds
+	get_tree().create_timer(4.0).timeout.connect(func():
+		if not match_ended:
+			spawn_single_bot(t)
+	)
 
 func _physics_process(delta: float) -> void:
 	if match_ended or start_screen.visible:
@@ -155,9 +181,9 @@ func _physics_process(delta: float) -> void:
 
 	# Win / Loss condition
 	if blue_score >= target_score:
-		finish_match("ПОБЕДА", "Ваша команда выполнила задачу и удержала точки!")
+		finish_match("ПОБЕДА!", "Ваша команда набрала 300 очков и взяла под контроль сектор!")
 	elif red_score >= target_score:
-		finish_match("ПОРАЖЕНИЕ", "Противник набрал 300 очков и захватил плацдарм.")
+		finish_match("ПОРАЖЕНИЕ", "Противник удержал ключевые точки и набрал 300 очков.")
 
 func update_point_indicator(id: String, owner_t: int, contested: bool) -> void:
 	var label_node: Label = null
@@ -192,7 +218,7 @@ func restart_match() -> void:
 	get_tree().reload_current_scene()
 
 func _on_player_health_changed(hp: float, bleeding: bool, b_count: int) -> void:
-	health_label.text = str(hp)
+	health_label.text = str(hp) + " HP" + (" [КРОВОТЕЧЕНИЕ]" if bleeding else "")
 	health_bar.value = hp
 	bandage_label.text = str(b_count)
 
@@ -200,11 +226,35 @@ func _on_player_ammo_changed(ammo: int, reserve: int, w_name: String) -> void:
 	weapon_name_label.text = w_name
 	ammo_label.text = "%d / %d" % [ammo, reserve]
 
+func _on_player_damage_taken() -> void:
+	# Flash red damage vignette
+	if damage_overlay:
+		damage_overlay.color = Color(0.8, 0.05, 0.05, 0.35)
+		var tween = create_tween()
+		tween.tween_property(damage_overlay, "color:a", 0.0, 0.4)
+
 func _on_player_hit_enemy(is_headshot: bool, _is_kill: bool) -> void:
 	# Flash crosshair hitmarker
-	hitmarker.modulate = Color(1.0, 0.2, 0.2) if is_headshot else Color.WHITE
+	hitmarker.modulate = Color(1.0, 0.2, 0.2) if is_headshot else Color(1.0, 1.0, 1.0)
 	hitmarker.visible = true
-	get_tree().create_timer(0.12).timeout.connect(func(): hitmarker.visible = false)
+	get_tree().create_timer(0.12).timeout.connect(func():
+		if is_instance_valid(hitmarker):
+			hitmarker.visible = false
+	)
 
 func _on_player_died() -> void:
-	finish_match("ВЫ ПОГИБЛИ В БОЮ", "Ваш отряд продолжает операцию...")
+	if match_ended:
+		return
+	# Player respawn after 4 seconds
+	health_label.text = "ВОЗРОЖДЕНИЕ ЧЕРЕЗ 4..."
+	get_tree().create_timer(4.0).timeout.connect(func():
+		if match_ended or not is_instance_valid(player):
+			return
+		player.is_dead = false
+		player.health = 100.0
+		player.bleeding = false
+		player.bandages = 3
+		player.global_position = Vector3(randf_range(-10, 10), 1.0, 62.0)
+		player.emit_health()
+		player.emit_ammo()
+	)

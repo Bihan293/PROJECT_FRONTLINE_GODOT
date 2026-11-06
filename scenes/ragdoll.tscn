@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://c8ragdoll123"]
+[gd_scene load_steps=17 format=3 uid="uid://c8ragdoll123"]
 
 [ext_resource type="Script" path="res://scripts/ragdoll.gd" id="1_ragdoll"]
 
@@ -10,7 +10,12 @@ albedo_color = Color(0.73, 0.58, 0.42, 1)
 roughness = 0.65
 
 [sub_resource type="StandardMaterial3D" id="Mat_Joint"]
-albedo_color = Color(0.15, 0.16, 0.15, 1)
+albedo_color = Color(0.18, 0.18, 0.18, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="Mat_Boot"]
+albedo_color = Color(0.14, 0.14, 0.14, 1)
+roughness = 0.7
 
 [sub_resource type="StandardMaterial3D" id="Mat_Vest"]
 albedo_color = Color(0.3, 0.35, 0.38, 1)
@@ -27,6 +32,18 @@ size = Vector3(0.38, 0.42, 0.24)
 [sub_resource type="SphereMesh" id="Mesh_Head"]
 radius = 0.19
 height = 0.38
+
+[sub_resource type="BoxMesh" id="Mesh_Thigh"]
+size = Vector3(0.13, 0.36, 0.13)
+
+[sub_resource type="BoxMesh" id="Mesh_Shin"]
+size = Vector3(0.11, 0.38, 0.11)
+
+[sub_resource type="BoxMesh" id="Mesh_Boot"]
+size = Vector3(0.13, 0.1, 0.22)
+
+[sub_resource type="BoxMesh" id="Mesh_Arm"]
+size = Vector3(0.1, 0.32, 0.1)
 
 [node name="SoldierRagdoll" type="RigidBody3D"]
 collision_layer = 4
@@ -50,14 +67,44 @@ surface_material_override/0 = SubResource("Mat_Joint")
 [node name="LeftHip" type="Node3D" parent="Visuals/Pelvis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.12, -0.09, 0)
 
+[node name="LeftThighMesh" type="MeshInstance3D" parent="Visuals/Pelvis/LeftHip"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Thigh")
+surface_material_override/0 = SubResource("Mat_Wood")
+
 [node name="LeftKnee" type="Node3D" parent="Visuals/Pelvis/LeftHip"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.42, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.38, 0)
+
+[node name="LeftShinMesh" type="MeshInstance3D" parent="Visuals/Pelvis/LeftHip/LeftKnee"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Shin")
+surface_material_override/0 = SubResource("Mat_Wood")
+
+[node name="LeftBootMesh" type="MeshInstance3D" parent="Visuals/Pelvis/LeftHip/LeftKnee"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.04)
+mesh = SubResource("Mesh_Boot")
+surface_material_override/0 = SubResource("Mat_Boot")
 
 [node name="RightHip" type="Node3D" parent="Visuals/Pelvis"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.12, -0.09, 0)
 
+[node name="RightThighMesh" type="MeshInstance3D" parent="Visuals/Pelvis/RightHip"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Thigh")
+surface_material_override/0 = SubResource("Mat_Wood")
+
 [node name="RightKnee" type="Node3D" parent="Visuals/Pelvis/RightHip"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.42, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.38, 0)
+
+[node name="RightShinMesh" type="MeshInstance3D" parent="Visuals/Pelvis/RightHip/RightKnee"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.18, 0)
+mesh = SubResource("Mesh_Shin")
+surface_material_override/0 = SubResource("Mat_Wood")
+
+[node name="RightBootMesh" type="MeshInstance3D" parent="Visuals/Pelvis/RightHip/RightKnee"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.36, 0.04)
+mesh = SubResource("Mesh_Boot")
+surface_material_override/0 = SubResource("Mat_Boot")
 
 [node name="Torso" type="Node3D" parent="Visuals"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
@@ -83,5 +130,15 @@ surface_material_override/0 = SubResource("Mat_Helmet")
 [node name="LeftShoulder" type="Node3D" parent="Visuals/Torso"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.24, 0.38, 0.02)
 
+[node name="LeftArmMesh" type="MeshInstance3D" parent="Visuals/Torso/LeftShoulder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
+mesh = SubResource("Mesh_Arm")
+surface_material_override/0 = SubResource("Mat_Wood")
+
 [node name="RightShoulder" type="Node3D" parent="Visuals/Torso"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.24, 0.38, 0.02)
+
+[node name="RightArmMesh" type="MeshInstance3D" parent="Visuals/Torso/RightShoulder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
+mesh = SubResource("Mesh_Arm")
+surface_material_override/0 = SubResource("Mat_Wood")

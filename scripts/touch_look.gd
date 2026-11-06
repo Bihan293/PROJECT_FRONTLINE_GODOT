@@ -11,8 +11,8 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			var vp_size = get_viewport_rect().size
-			# Touch started on the right half of screen
-			if event.position.x > vp_size.x * 0.35 and touch_id == -1:
+			# Touch started strictly on the right 60% of the screen, avoid overlap with joystick
+			if event.position.x >= vp_size.x * 0.40 and touch_id == -1:
 				touch_id = event.index
 		elif event.index == touch_id:
 			touch_id = -1

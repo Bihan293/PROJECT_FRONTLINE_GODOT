@@ -2,6 +2,12 @@ extends Node3D
 class_name BloodEffect
 
 static func spawn(parent: Node, pos: Vector3, normal: Vector3, is_headshot: bool = false) -> void:
+	if parent == null or not is_instance_valid(parent):
+		return
+	var tree = parent.get_tree()
+	if tree == null:
+		return
+
 	var effect = Node3D.new()
 	parent.add_child(effect)
 	effect.global_position = pos
@@ -56,13 +62,21 @@ static func spawn(parent: Node, pos: Vector3, normal: Vector3, is_headshot: bool
 	parent.add_child(decal)
 	decal.global_position = decal_pos
 
-	# Auto cleanup after 20 seconds
-	var timer = effect.get_tree().create_timer(1.2)
-	timer.timeout.connect(func(): effect.queue_free())
+	# Auto cleanup
+	tree.create_timer(1.2).timeout.connect(func():
+		if is_instance_valid(effect):
+			effect.queue_free()
+	)
 
-	var decal_timer = decal.get_tree().create_timer(25.0)
-	decal_timer.timeout.connect(func():
-		var tween = decal.create_tween()
-		tween.tween_property(decal_mat, "albedo_color:a", 0.0, 3.0)
-		tween.tween_callback(func(): decal.queue_free())
+	tree.create_timer(25.0).timeout.connect(func():
+		if is_instance_valid(decal):
+			var tween = decal.create_tween()
+			if tween:
+				tween.tween_property(decal_mat, "albedo_color:a", 0.0, 3.0)
+				tween.tween_callback(func():
+					if is_instance_valid(decal):
+						decal.queue_free()
+				)
+			else:
+				decal.queue_free()
 	)

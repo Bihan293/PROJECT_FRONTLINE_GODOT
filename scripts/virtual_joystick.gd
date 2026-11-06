@@ -20,9 +20,9 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventScreenTouch:
 		if event.pressed:
-			# Only activate if touch starts on left 40% of screen and bottom 60%
+			# Activate only on left 40% of screen and lower 70% of screen height
 			var vp_size = get_viewport_rect().size
-			if event.position.x < vp_size.x * 0.42 and event.position.y > vp_size.y * 0.35 and touch_id == -1:
+			if event.position.x < vp_size.x * 0.40 and event.position.y > vp_size.y * 0.30 and touch_id == -1:
 				touch_id = event.index
 				global_position = event.position - base.size / 2.0
 				touch_start = event.position
@@ -55,6 +55,6 @@ func update_joystick(pos: Vector2) -> void:
 func reset() -> void:
 	touch_id = -1
 	output = Vector2.ZERO
-	if handle:
+	if handle and base:
 		handle.position = (base.size / 2.0) - (handle.size / 2.0)
 	joystick_moved.emit(Vector2.ZERO)
