@@ -39,6 +39,7 @@ var damage_overlay: ColorRect = null
 const SOLDIER_SCENE = preload("res://scenes/dummy_soldier.tscn")
 
 func _ready() -> void:
+	DisplayServer.screen_set_orientation(DisplayServer.SCREEN_ORIENTATION_SENSOR_LANDSCAPE)
 	hud.visible = false
 	pause_screen.visible = false
 	end_screen.visible = false
